@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
+import cors from "cors";
 import { graphqlHTTP } from "express-graphql";
 import schema from "./schema";
 import { Types } from "mongoose";
@@ -13,6 +14,7 @@ import ClientModel from "./models/Client";
 const port = process.env.PORT || 8000;
 
 const app = express();
+app.use(cors());
 
 connectDB();
 

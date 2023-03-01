@@ -8,8 +8,11 @@ import {
   GraphQLEnumType,
 } from "graphql";
 
+import { Types } from "mongoose";
+
 import ClientModel from "../models/Client";
 import ProjectModel from "../models/Project";
+import { IClient } from "../types";
 
 // Types
 const Client = new GraphQLObjectType({
@@ -42,7 +45,32 @@ const Project = new GraphQLObjectType({
     },
     client: {
       type: Client,
-      resolve: async (source, info) => ClientModel.findById(source.clientId),
+      resolve: (source, info) => ClientModel.findById(source.clientId)!,
+    },
+  }),
+});
+
+// Queries
+const RootQuery = new GraphQLObjectType({
+  name: "RootQuery",
+  fields: () => ({
+    clients: {
+      type: new GraphQLList(Client),
+      resolve: () => ClientModel.find(),
+    },
+    client: {
+      type: Client,
+      args: { id: { type: GraphQLID } },
+      resolve: (source, info) => ClientModel.findById(info.id),
+    },
+    project: {
+      type: Project,
+      args: { id: { type: GraphQLID } },
+      resolve: (source, info) => ProjectModel.findById(info.id),
+    },
+    projects: {
+      type: new GraphQLList(Project),
+      resolve: () => ProjectModel.find(),
     },
   }),
 });
@@ -60,9 +88,7 @@ const RootMutation = new GraphQLObjectType({
       },
       resolve: (source, info) => {
         const client = new ClientModel({
-          name: info.name,
-          email: info.email,
-          phone: info.phone,
+          ...info,
         });
 
         return client.save();
@@ -95,16 +121,12 @@ const RootMutation = new GraphQLObjectType({
         },
         clientId: { type: GraphQLID },
       },
-      resolve: async (source, { name, description, status, clientId }) => {
-        const client = ClientModel.findById(clientId) as any;
-        console.log("[source]", source);
-        console.log("[info]", status);
+      resolve: async (source, { clientId, ...info }) => {
+        const cId = new Types.ObjectId(clientId);
 
         const saved = await new ProjectModel({
-          name,
-          description,
-          status,
-          clientId: client._id,
+          ...info,
+          clientId: cId,
         }).save();
         console.log("[saved]", saved);
         return saved;
@@ -166,31 +188,10 @@ const RootMutation = new GraphQLObjectType({
   },
 });
 
-const RootQuery = new GraphQLObjectType({
-  name: "RootQuery",
-  fields: () => ({
-    clients: {
-      type: new GraphQLList(Client),
-      resolve: () => ClientModel.find(),
-    },
-    client: {
-      type: Client,
-      args: { id: { type: GraphQLID } },
-      resolve: (source, info) => ClientModel.findById(info.id),
-    },
-    project: {
-      type: Project,
-      args: { id: { type: GraphQLID } },
-      resolve: (source, info) => ProjectModel.findById(info.id),
-    },
-    projects: {
-      type: new GraphQLList(Project),
-      resolve: () => ProjectModel.find(),
-    },
-  }),
+// Schema
+const RootSchema = new GraphQLSchema({
+  query: RootQuery,
+  mutation: RootMutation,
 });
 
-// Schema
-const Schema = new GraphQLSchema({ query: RootQuery, mutation: RootMutation });
-
-export default Schema;
+export default RootSchema;

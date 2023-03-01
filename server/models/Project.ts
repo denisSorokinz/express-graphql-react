@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
+import { IProject } from "../types";
 
-const ProjectSchema = new Schema({
+const ProjectSchema = new Schema<IProject>({
   name: {
     type: String,
   },

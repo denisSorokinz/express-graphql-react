@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
+import { IClient } from "../types";
 
-const ClientSchema = new Schema({
+const ClientSchema = new Schema<IClient>({
   name: {
     type: String,
   },
